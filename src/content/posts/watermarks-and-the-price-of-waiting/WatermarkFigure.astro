@@ -1,0 +1,95 @@
+---
+import { events, model, pointsHTML } from './watermark.js';
+const D0 = 5;
+const m = model(D0, events());
+const presets = [0, 4, 8, 12, 16];
+---
+<figure class="fig">
+  <watermark-figure class="frame" data-d={D0}>
+    <div class="frame-title">
+      <span>FIG. 01 — WATERMARK BOUND</span>
+      <span class="mode"><span class="mode-fine">INTERACTIVE</span><span class="mode-touch">TAP TO ADJUST</span></span>
+    </div>
+    <div class="plot">
+      <svg viewBox="0 0 640 320" aria-hidden="true">
+        <polygon data-el="poly" points={m.poly} fill="#EDE6D4" fill-opacity="0.08" />
+        <line x1="40" y1="20" x2="40" y2="290" stroke="#EDE6D4" stroke-opacity="0.6" />
+        <line x1="40" y1="290" x2="620" y2="290" stroke="#EDE6D4" stroke-opacity="0.6" />
+        <line x1="40" y1="290" x2="620" y2="20" stroke="#EDE6D4" stroke-opacity="0.45" stroke-dasharray="2 5" />
+        <line data-el="wm" x1={m.wx1} y1="290" x2="620" y2={m.wy2} stroke="#EDE6D4" stroke-width="1.5" />
+        <line data-el="fire" x1={m.fireX} y1="20" x2={m.fireX} y2="290" stroke="#E3A58C" stroke-dasharray="4 4" />
+      </svg>
+      <div class="overlay" aria-hidden="true">
+        <div data-el="points" set:html={pointsHTML(m)} />
+        <span class="lbl fire" data-el="fireLbl" style={`left:${m.fireL}%;top:6.25%`}>[0,30s) FIRES</span>
+        <span class="lbl strong" data-el="wmLbl" style={`left:${m.labL}%;top:${m.labT}%`}>WATERMARK</span>
+        <span class="lbl eq" style="right:14%;top:11%">EVENT = ARRIVAL</span>
+        <span class="lbl" style="left:calc(6.25% + 8px);top:6.25%">↑ EVENT TIME</span>
+        <span class="lbl" style="right:3.2%;top:calc(90.6% - 20px)">ARRIVAL →</span>
+        <span class="lbl center" style="left:6.25%;top:calc(90.6% + 6px)">0</span>
+        <span class="lbl center" style="left:51.56%;top:calc(90.6% + 6px)">30s</span>
+        <span class="lbl center" style="left:96.9%;top:calc(90.6% + 6px)">60s</span>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="ctl-fine">BOUND d
+        <input type="range" min="0" max="16" step="0.5" value={D0} data-el="range" />
+        <output data-el="v1">{m.dS}s</output>
+      </label>
+      <div class="ctl-touch">
+        <div class="stepper">
+          <button type="button" data-step="-1" aria-label="Decrease bound">−</button>
+          <span>BOUND d = <span data-el="v2">{m.dS}</span>s</span>
+          <button type="button" data-step="1" aria-label="Increase bound">+</button>
+        </div>
+        <div class="presets" role="group" aria-label="Preset bounds">
+          {presets.map((v) => <button type="button" data-preset={v} aria-pressed={v === D0 ? 'true' : 'false'}>{v}s</button>)}
+        </div>
+      </div>
+    </div>
+    <div class="readout" aria-live="polite">
+      <span>DROPPED <span data-el="late">{m.late}</span> / {m.total}</span>
+      <span class="rust">WINDOW FIRES AT <span data-el="fireS">{m.fireS}</span>s</span>
+    </div>
+    <p class="sr-only">Scatter plot of {m.total} events by arrival time against event time. Raising the bound d drops fewer late events but delays when the 0–30 second window fires.</p>
+  </watermark-figure>
+  <figcaption>Events by arrival (x) against event time (y). Filled points arrived before the watermark passed them; ringed points arrived after and are dropped.</figcaption>
+</figure>
+
+<script>
+  import { events, model, pointsHTML } from './watermark.js';
+
+  class WatermarkFigure extends HTMLElement {
+    d = 5;
+    ev = events();
+    connectedCallback() {
+      this.d = Number(this.dataset.d ?? 5);
+      const range = this.el<HTMLInputElement>('range');
+      range?.addEventListener('input', () => this.set(Number(range.value)));
+      this.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) =>
+        b.addEventListener('click', () => this.set(this.d + Number(b.dataset.step))));
+      this.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) =>
+        b.addEventListener('click', () => this.set(Number(b.dataset.preset))));
+    }
+    el<T extends Element = Element>(name: string) { return this.querySelector<T>(`[data-el="${name}"]`); }
+    set(next: number) {
+      const d = Math.max(0, Math.min(16, next));
+      this.d = d;
+      const m = model(d, this.ev);
+      this.el('poly')?.setAttribute('points', m.poly);
+      const wm = this.el('wm'); wm?.setAttribute('x1', String(m.wx1)); wm?.setAttribute('y2', String(m.wy2));
+      const fire = this.el('fire'); fire?.setAttribute('x1', String(m.fireX)); fire?.setAttribute('x2', String(m.fireX));
+      const pts = this.el('points'); if (pts) pts.innerHTML = pointsHTML(m);
+      const fl = this.el<HTMLElement>('fireLbl'); if (fl) fl.style.left = m.fireL + '%';
+      const wl = this.el<HTMLElement>('wmLbl'); if (wl) wl.style.top = m.labT + '%';
+      const range = this.el<HTMLInputElement>('range'); if (range) range.value = String(d);
+      this.el('v1')!.textContent = m.dS + 's';
+      this.el('v2')!.textContent = m.dS;
+      this.el('late')!.textContent = String(m.late);
+      this.el('fireS')!.textContent = m.fireS;
+      this.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) =>
+        b.setAttribute('aria-pressed', String(Number(b.dataset.preset) === d)));
+    }
+  }
+  customElements.define('watermark-figure', WatermarkFigure);
+</script>

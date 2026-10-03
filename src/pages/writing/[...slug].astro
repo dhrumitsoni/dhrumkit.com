@@ -1,0 +1,17 @@
+---
+import { render } from 'astro:content';
+import Post from '../../layouts/Post.astro';
+import { getPosts } from '../../lib/posts';
+import Sidenote from '../../components/Sidenote.astro';
+import Listing from '../../components/Listing.astro';
+import Divider from '../../components/Divider.astro';
+
+export async function getStaticPaths() {
+  return (await getPosts()).map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+const { post } = Astro.props;
+const { Content, headings, remarkPluginFrontmatter } = await render(post);
+---
+<Post data={post.data} headings={headings} readingTime={remarkPluginFrontmatter.readingTime}>
+  <Content components={{ Sidenote, Listing, Divider }} />
+</Post>

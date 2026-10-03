@@ -1,0 +1,9 @@
+---
+// Wraps a fenced code block with registration corners and a title bar. Code never wraps.
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<div class="listing frame">
+  <div class="frame-title"><span>{title}</span><span class="scroll-hint" aria-hidden="true">SCROLL →</span></div>
+  <slot />
+</div>

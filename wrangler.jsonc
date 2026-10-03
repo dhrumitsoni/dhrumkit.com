@@ -1,0 +1,12 @@
+// Static Astro site served as Worker static assets. `name` must match the existing
+// Cloudflare worker so deploys keep the dhrumkit.com custom domain.
+{
+  "name": "bold-queen-7c1d",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  // Required by `wrangler preview`, which Workers Builds runs for non-main branches (PR preview URLs).
+  "previews": {}
+}

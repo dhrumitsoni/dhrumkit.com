@@ -1,0 +1,39 @@
+---
+title: Watermarks and the Price of Waiting
+dek: A stream processor can never know that all the data for a window has arrived. A watermark is its bet, and the delay you give it is the stake.
+series: Streaming Systems
+number: "014"
+date: 2026-09-26
+sections:
+  - { id: two-clocks, label: Two clocks }
+  - { id: late-data, label: Late data }
+---
+import WatermarkFigure from './WatermarkFigure.astro';
+
+<h2 id="two-clocks" class="sr-only">Two clocks</h2>
+
+Every event carries two clocks. Event time is when something happened on a device; processing time is when the pipeline finally sees it. On a healthy network the two stay close. On a phone that drops into a tunnel, they can drift apart by minutes. A windowed aggregation keyed on event time has to decide when a window is complete, and nothing in the stream tells it for certain.<Sidenote>The Dataflow Model paper (Akidau et al., 2015) describes this as a tradeoff between correctness, latency and cost.</Sidenote>
+
+A watermark is the operator’s running assertion that no events older than time *W* are still in flight. The simplest strategy trails the largest timestamp seen so far by a fixed bound:
+
+<Listing title="LST. 01 — JAVA / FLINK">
+
+```java
+// bound the disorder we are willing to wait for
+WatermarkStrategy
+    .<ClickEvent>forBoundedOutOfOrderness(Duration.ofSeconds(5))
+    .withTimestampAssigner((event, ts) -> event.occurredAt())
+    .withIdleness(Duration.ofMinutes(1));
+```
+
+</Listing>
+
+<Divider label="§ 02" />
+
+<h2 id="late-data">Late data</h2>
+
+Anything that arrives with an event time below the current watermark is late. It is dropped, or routed to a side output, depending on configuration. Adjust the bound below to see the trade: a wider bound admits more stragglers, and every window waits that much longer before it fires.
+
+<WatermarkFigure />
+
+<p style={{ marginTop: "40px" }}>No setting of <em>d</em> removes both costs. The rest of this post looks at strategies that move the bound per key and per partition instead of fixing it globally.</p>

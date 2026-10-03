@@ -1,0 +1,7 @@
+---
+interface Props { label: string }
+const { label } = Astro.props;
+---
+<div class="dim divider" role="separator" aria-label={label}>
+  <span class="t"></span><span class="l"></span><span class="lab" aria-hidden="true">{label}</span><span class="l"></span><span class="t"></span>
+</div>

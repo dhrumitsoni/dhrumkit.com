@@ -1,0 +1,8 @@
+---
+// Margin note at ≥1024px; tap-to-expand inline note below that. Place inline, right after the sentence it annotates.
+// `n` is filled in by remark-sidenotes (document order), so posts just write <Sidenote>…</Sidenote>.
+interface Props { n?: number | string }
+const { n = '' } = Astro.props;
+const id = `sn-${n}`;
+---
+<input type="checkbox" id={id} class="sn-toggle" aria-label={`Show note ${n}`} /><label for={id} class="sn-ref">{n}</label><span class="sidenote" role="note"><span aria-hidden="true">{n}</span><span><slot /></span></span>
