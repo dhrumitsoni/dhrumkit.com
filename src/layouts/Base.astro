@@ -1,0 +1,70 @@
+---
+import '../styles/global.css';
+import Seo from '../components/Seo.astro';
+import { SITE } from '../site';
+
+interface Props {
+  title: string;
+  description?: string;
+  current?: 'about' | 'writing';
+  type?: 'website' | 'article';
+  published?: Date;
+}
+const { title, description = SITE.description, current, type, published } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Seo title={title} description={description} type={type} published={published} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" />
+  </head>
+  <body>
+    <header class="site-band">
+      <div class="site-bar">
+        <span class="domain" aria-hidden="true">DHRUMKIT.COM</span>
+        <a class="logo" href="/" aria-label={`${SITE.name} — home`}>
+          <img src="/logo-bone.svg" alt="" width="102" height="48" />
+        </a>
+        <nav aria-label="Site">
+          <a href="/writing/" aria-current={current === 'writing' ? 'page' : undefined}>writing</a>
+          <a href="/" aria-current={current === 'about' ? 'page' : undefined}>about</a>
+        </nav>
+      </div>
+      <slot name="band" />
+    </header>
+    <slot />
+
+    <script>
+      // Code blocks: show "SCROLL →" and make focusable only when they overflow.
+      const markListings = () => {
+        document.querySelectorAll<HTMLElement>('.listing').forEach((l) => {
+          const pre = l.querySelector('pre');
+          if (!pre) return;
+          const over = pre.scrollWidth > pre.clientWidth + 1;
+          l.toggleAttribute('data-overflow', over);
+          if (over) { pre.tabIndex = 0; pre.setAttribute('aria-label', 'Code listing, scrolls horizontally'); }
+          else { pre.removeAttribute('tabindex'); pre.removeAttribute('aria-label'); }
+        });
+      };
+      markListings();
+      addEventListener('resize', markListings, { passive: true });
+
+      // Contents rail: mark the section currently in view.
+      const links = [...document.querySelectorAll<HTMLAnchorElement>('.rail a[href^="#"]')];
+      if (links.length) {
+        const targets = links.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))));
+        const update = () => {
+          let idx = 0;
+          targets.forEach((t, i) => { if (t && t.getBoundingClientRect().top < 160) idx = i; });
+          links.forEach((a, i) => a.setAttribute('aria-current', String(i === idx)));
+        };
+        update();
+        addEventListener('scroll', update, { passive: true });
+      }
+    </script>
+  </body>
+</html>
