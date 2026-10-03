@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getPosts, postUrl } from '../../lib/posts';
+import { SITE } from '../../site';
+
+const posts = await getPosts();
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+---
+<Base title={`Writing · ${SITE.name}`} current="writing">
+  <div class="dim page-rule" aria-hidden="true"><span class="t"></span><span class="l"></span><span class="t"></span></div>
+  <main class="post-grid article-body">
+    <div class="prose">
+      <h1 class="index-title">Writing</h1>
+      <ol class="post-list">
+        {posts.map((p) => (
+          <li>
+            <a href={postUrl(p)}>
+              <span class="meta"><time datetime={p.data.date.toISOString()}>{iso(p.data.date)}</time> · {p.data.series.toUpperCase()} · NO. {p.data.number}</span>
+              <span class="title">{p.data.title} <span class="arrow" aria-hidden="true">→</span></span>
+              <span class="dek">{p.data.dek}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .index-title { margin: 0 0 32px; font: 500 var(--h2)/1.2 var(--serif); color: var(--field); }
+  .post-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--cyan); }
+  .post-list li { border-bottom: 1px solid rgba(45, 88, 120, 0.35); }
+  .post-list a { display: flex; flex-direction: column; gap: 8px; padding: 22px 0 24px; color: var(--ink); text-decoration: none; }
+  .meta { font: 12px var(--mono); letter-spacing: 0.06em; color: var(--cyan); }
+  .title { font: 500 clamp(22px, 2.4vw, 28px)/1.2 var(--serif); color: var(--field); }
+  .dek { font-size: var(--fs); line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+  .arrow { display: inline-block; transition: transform 180ms ease-out; }
+  .post-list a:hover .title { color: var(--rust); }
+  .post-list a:hover .arrow, .post-list a:focus-visible .arrow { transform: translateX(6px); }
+</style>

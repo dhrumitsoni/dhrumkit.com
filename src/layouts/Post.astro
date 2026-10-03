@@ -1,0 +1,46 @@
+---
+import Base from './Base.astro';
+import { SITE } from '../site';
+import type { MarkdownHeading } from 'astro';
+import type { Post } from '../lib/posts';
+
+interface Props {
+  data: Post['data'];
+  headings?: MarkdownHeading[];
+  readingTime?: string; // computed by remark-reading-time; front-matter wins if set
+}
+const { data, headings = [] } = Astro.props;
+const readingTime = (data.readingTime ?? Astro.props.readingTime ?? '').toUpperCase();
+const toc = data.sections.length
+  ? data.sections
+  : headings.filter((h) => h.depth === 2).map((h) => ({ id: h.slug, label: h.text }));
+const dateLong = data.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).toUpperCase();
+---
+<Base title={`${data.title} · ${SITE.name}`} description={data.dek} current="writing" type="article" published={data.date}>
+  <div slot="band" class="post-grid band-head">
+    <p class="kicker">{data.series.toUpperCase()} · NO. {data.number}</p>
+    <p class="meta-side"><time datetime={data.date.toISOString()}>{dateLong}</time><br />{readingTime} READ</p>
+    <h1>{data.title}</h1>
+    <p class="dek">{data.dek}</p>
+    <div>
+      <div class="dim" aria-hidden="true">
+        <span class="t"></span><span class="l"></span>
+        <span class="lab">MEASURE <span class="measure-s">FLUID</span><span class="measure-m">600</span><span class="measure-l">680</span></span>
+        <span class="l"></span><span class="t"></span>
+      </div>
+      <p class="byline">{data.author.toUpperCase()}<span class="date-inline"><br />{dateLong} · {readingTime} READ</span></p>
+    </div>
+  </div>
+
+  <main class="post-grid article-body">
+    {toc.length > 0 && (
+      <nav class="rail" aria-label="Contents">
+        <span class="rail-title">CONTENTS</span>
+        {toc.map((s, i) => <a href={`#${s.id}`}>{String(i + 1).padStart(2, '0')} {s.label}</a>)}
+      </nav>
+    )}
+    <article class="prose">
+      <slot />
+    </article>
+  </main>
+</Base>
